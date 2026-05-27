@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://steloit.dev/contract/v1/placeholders.schema.json",
+  "title": "Steloit Template Placeholder Set (v1)",
+  "description": "Canonical enum of <UPPERCASE_UNDERSCORE> placeholders that the steloit-go prompt renderer substitutes at render time. Verified against internal/prompt/{prompt.go,renderforstage.go,substitute.go} at SHA fa7a43eb798daab66e4639f049324b5c80d16908. 14 content + 10 stack = 24 total.",
+  "type": "string",
+  "enum": [
+    "ROLE",
+    "TASK_ID",
+    "PROJECT_BRIEF_TITLE",
+    "PROJECT_BRIEF",
+    "DESCRIPTION",
+    "TEAM_CONVENTIONS",
+    "TEAM_GLOSSARY",
+    "CRITIC_STRICTNESS",
+    "PLAN",
+    "DONE_WHEN",
+    "DECISION_LOG",
+    "DEPENDENCY_CONTEXT",
+    "CRITIC_FEEDBACK",
+    "INSPECTOR_FEEDBACK",
+    "STACK_PROFILE",
+    "STACK_LANGUAGES",
+    "STACK_PACKAGE_MGR",
+    "STACK_FRAMEWORK",
+    "STACK_LINTER",
+    "STACK_FORMATTER",
+    "STACK_TEST_RUNNER",
+    "STACK_BUILD_SYSTEM",
+    "STACK_CI",
+    "STACK_DEFAULT_COMMANDS_BUILD"
+  ],
+  "$defs": {
+    "content": {
+      "type": "string",
+      "enum": [
+        "ROLE",
+        "TASK_ID",
+        "PROJECT_BRIEF_TITLE",
+        "PROJECT_BRIEF",
+        "DESCRIPTION",
+        "TEAM_CONVENTIONS",
+        "TEAM_GLOSSARY",
+        "CRITIC_STRICTNESS",
+        "PLAN",
+        "DONE_WHEN",
+        "DECISION_LOG",
+        "DEPENDENCY_CONTEXT",
+        "CRITIC_FEEDBACK",
+        "INSPECTOR_FEEDBACK"
+      ]
+    },
+    "stack": {
+      "type": "string",
+      "enum": [
+        "STACK_PROFILE",
+        "STACK_LANGUAGES",
+        "STACK_PACKAGE_MGR",
+        "STACK_FRAMEWORK",
+        "STACK_LINTER",
+        "STACK_FORMATTER",
+        "STACK_TEST_RUNNER",
+        "STACK_BUILD_SYSTEM",
+        "STACK_CI",
+        "STACK_DEFAULT_COMMANDS_BUILD"
+      ]
+    }
+  }
+}

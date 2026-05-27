@@ -101,6 +101,36 @@ path or repo will fail verification by design.
     └── dco.yml
 ```
 
+## Contract
+
+`contract/v1/` publishes the public **steloit template contract** —
+the source-of-truth schemas third-party template authors validate
+against before submitting a custom template via the dashboard (#428)
+or API. The contract is intentionally separate from this repo's
+Claude Code skill bundle: agents, workflows, and rubrics live in
+tenant Postgres, authored via the dashboard; the contract defines
+their shape.
+
+- [`contract/v1/placeholders.schema.json`](contract/v1/placeholders.schema.json)
+  — enum of the 24 `<UPPERCASE_UNDERSCORE>` placeholders the
+  steloit-go prompt renderer substitutes (14 content + 10 stack).
+- [`contract/v1/frontmatter.schema.json`](contract/v1/frontmatter.schema.json)
+  — required YAML frontmatter shape for any template (8 keys).
+- [`contract/v1/rubric.schema.json`](contract/v1/rubric.schema.json)
+  — rubric YAML shape consumed by Critic and Inspector agents.
+
+Validate a template locally:
+
+```
+pip install -r scripts/requirements.txt
+./scripts/validate-template.sh path/to/template.md
+```
+
+Examples live in [`examples/`](examples/); the editor that produces
+production templates is shipped by #428 (dashboard URL TBD). Contract
+evolution is recorded in [`CONTRACT-CHANGES.md`](CONTRACT-CHANGES.md).
+`v1` is additive-safe; breaking changes ship as `v2/`.
+
 ## Contributing
 
 We accept contributions under the Apache-2.0 patent grant. Every commit

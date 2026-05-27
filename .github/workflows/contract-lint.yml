@@ -1,0 +1,140 @@
+name: contract-lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  STELOIT_GO_PINNED_SHA: fa7a43eb798daab66e4639f049324b5c80d16908
+
+jobs:
+  schema-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 -m pip install -r scripts/requirements.txt
+      - name: Self-validate contract/v1/*.schema.json
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          from jsonschema import Draft202012Validator
+          for p in sorted(glob.glob("contract/v1/*.schema.json")):
+              Draft202012Validator.check_schema(json.load(open(p)))
+              print("schema ok:", p)
+          PY
+
+  examples-validate:
+    runs-on: ubuntu-latest
+    needs: schema-validate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 -m pip install -r scripts/requirements.txt
+      - run: ./scripts/validate-template.sh examples/example-planner.md examples/example-critic.md
+
+  tamper-fixture:
+    runs-on: ubuntu-latest
+    needs: schema-validate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 -m pip install -r scripts/requirements.txt
+      - name: Tamper fixtures must exit 1
+        run: |
+          set -eu
+          cat > /tmp/bad-placeholder.md <<'EOF'
+          ---
+          name: bad-placeholder
+          description: tamper fixture
+          role: planner
+          model_key: planner
+          signature: "> **Planner** `opus` · 2026-05-27T10:52:01Z"
+          version: 1.0.0
+          tags: []
+          rubric_ref: null
+          ---
+          > **Planner** `opus` · 2026-05-27T10:52:01Z
+
+          # Bad — <ROLE>
+          <UNKNOWN_PLACEHOLDER>
+          EOF
+          cat > /tmp/bad-frontmatter.md <<'EOF'
+          ---
+          name: bad-frontmatter
+          role: planner
+          model_key: planner
+          signature: "> **Planner** `opus` · 2026-05-27T10:52:01Z"
+          version: 1.0.0
+          tags: []
+          rubric_ref: null
+          ---
+          > **Planner** `opus` · 2026-05-27T10:52:01Z
+
+          content
+          EOF
+          cat > /tmp/bad-signature.md <<'EOF'
+          ---
+          name: bad-signature
+          description: tamper fixture
+          role: planner
+          model_key: planner
+          signature: "not a real signature"
+          version: 1.0.0
+          tags: []
+          rubric_ref: null
+          ---
+          not the right signature line
+
+          content
+          EOF
+          for f in /tmp/bad-placeholder.md /tmp/bad-frontmatter.md /tmp/bad-signature.md; do
+            if ./scripts/validate-template.sh "$f"; then
+              echo "::error::tamper fixture $f should have been rejected" >&2
+              exit 1
+            fi
+          done
+
+  drift-diff:
+    runs-on: ubuntu-latest
+    needs: examples-validate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Drift-diff examples body vs pinned steloit-go SHA
+        env:
+          STELOIT_GO_RAW_TOKEN: ${{ secrets.STELOIT_GO_RAW_TOKEN }}
+          HARD_FAIL: ${{ vars.CONTRACT_DRIFT_HARD_FAIL }}
+        run: |
+          set -u
+          if [ -z "${STELOIT_GO_RAW_TOKEN:-}" ]; then
+            echo "::warning::STELOIT_GO_RAW_TOKEN secret not set; skipping drift-diff (soft-fail). Set repo var CONTRACT_DRIFT_HARD_FAIL=true to enforce."
+            if [ "${HARD_FAIL:-false}" = "true" ]; then
+              exit 1
+            fi
+            exit 0
+          fi
+          set -e
+          BASE="https://raw.githubusercontent.com/steloit/steloit-go/${STELOIT_GO_PINNED_SHA}/internal/prompt/templates/default-coding"
+          mkdir -p /tmp/drift
+          rc=0
+          for name in planner critic; do
+            curl -fsSL -H "Authorization: token ${STELOIT_GO_RAW_TOKEN}" \
+              "${BASE}/${name}.md" -o "/tmp/drift/${name}.upstream.md"
+            awk '/^---$/{c++; next} c>=2{print}' "examples/example-${name}.md" > "/tmp/drift/${name}.body.md"
+            # Strip the leading signature header line + blank line from example body
+            # to compare against the raw seed.
+            tail -n +3 "/tmp/drift/${name}.body.md" > "/tmp/drift/${name}.body.stripped.md"
+            if ! diff -q "/tmp/drift/${name}.body.stripped.md" "/tmp/drift/${name}.upstream.md" >/dev/null; then
+              echo "::error::drift detected in examples/example-${name}.md vs upstream ${name}.md"
+              diff -u "/tmp/drift/${name}.upstream.md" "/tmp/drift/${name}.body.stripped.md" || true
+              rc=1
+            fi
+          done
+          exit $rc

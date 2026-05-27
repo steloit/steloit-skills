@@ -1,0 +1,54 @@
+name: example-plan-review
+version: 1.0.0
+description: Example rubric scoring a Planner artifact against four dimensions.
+dimensions:
+  - key: completeness
+    label: Completeness
+    scale: { min: 1, max: 5 }
+    checklist_questions:
+      - Does the plan address every item in the Done-When checklist?
+      - Are all referenced files in scope identified?
+  - key: feasibility
+    label: Feasibility
+    scale: { min: 1, max: 5 }
+    checklist_questions:
+      - Can the plan be executed by the Builder without further clarification?
+      - Are dependencies and prerequisites realistic?
+  - key: clarity
+    label: Clarity
+    scale: { min: 1, max: 5 }
+    checklist_questions:
+      - Is each step described in concrete file-level language?
+  - key: risk
+    label: Risk awareness
+    scale: { min: 1, max: 5 }
+    checklist_questions:
+      - Are edge cases and rollback paths called out?
+score_range:
+  min: 1
+  max: 5
+decision_rule: "avg >= 3.5 AND no_dim_below_2"
+anti_patterns:
+  - code: STELOIT_VAGUE_PLAN
+    description: Plan uses words like "improve" or "refactor" without naming files.
+    hard_reject: true
+  - code: STELOIT_MISSING_DONE_WHEN
+    description: Plan does not map steps to Done-When items.
+    hard_reject: false
+reason_codes:
+  - code: NEEDS_SCOPE
+    description: Plan scope is too broad or too narrow for the task.
+  - code: NEEDS_FILES
+    description: Plan does not enumerate files to change.
+output_schema:
+  type: object
+  required: [scores, decision, comment]
+  properties:
+    scores:
+      type: object
+      additionalProperties: { type: number }
+    decision:
+      type: string
+      enum: [approve, request_changes, block]
+    comment:
+      type: string

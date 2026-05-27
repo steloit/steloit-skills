@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://steloit.dev/contract/v1/rubric.schema.json",
+  "title": "Steloit Rubric (v1)",
+  "description": "Rubric YAML schema consumed by Critic and Inspector agents. Defines scoring dimensions, anti-patterns, reason codes, decision rule, and the output shape the agent must produce.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "version",
+    "description",
+    "dimensions",
+    "score_range",
+    "decision_rule",
+    "output_schema"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/dimension" }
+    },
+    "score_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" }
+      }
+    },
+    "decision_rule": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Boolean expression evaluated against dimension scores, e.g. 'avg >= 4 AND no_dim_below_2'"
+    },
+    "anti_patterns": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/anti_pattern" }
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reason_code" }
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON-Schema fragment describing the structured output the agent must produce. Validated as a schema-of-schemas at consume time; here we only require it to be an object."
+    }
+  },
+  "$defs": {
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "scale", "checklist_questions"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "label": { "type": "string", "minLength": 1 },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": {
+            "min": { "type": "number", "const": 1 },
+            "max": { "type": "number", "const": 5 }
+          }
+        },
+        "checklist_questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "anchors": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Optional per-score-level prose anchors (e.g. {'1': 'unacceptable', '5': 'exemplary'})"
+        }
+      }
+    },
+    "anti_pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "description", "hard_reject"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^STELOIT_[A-Z0-9_]+$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "hard_reject": { "type": "boolean" }
+      }
+    },
+    "reason_code": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "description"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$"
+        },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
