@@ -29,7 +29,7 @@ Per `ADR-0005`, Steloit is built as an open core:
   the code under Apache-2.0.
 - **The server (closed)** — the orchestrator, state machine, prompt
   renderer, dashboard, and billing live in a separate, proprietary
-  repository owned by Humane Technologies Inc. <!-- lint-allow: closed-repo-ref -->
+  repository owned by Steloit <!-- lint-allow: closed-repo-ref -->
 
 The two are connected through:
 
@@ -115,8 +115,8 @@ text. There is no separate CLA.
 
 ## Trademark
 
-The source code in this repository is Apache-2.0. The names "Steloit"
-and the Steloit logo are trademarks of Humane Technologies Inc. and are
+The source code in this repository is Apache-2.0. The name "Steloit"
+and the Steloit logo are trademarks of the Steloit project and are
 **not** covered by the Apache-2.0 license. See `TRADEMARK.md` for what
 fork names are permitted.
 

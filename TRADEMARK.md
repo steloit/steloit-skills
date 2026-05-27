@@ -1,6 +1,6 @@
 # Trademark Policy
 
-Steloit and the Steloit logo are trademarks of Humane Technologies Inc.
+"Steloit" and the Steloit logo are trademarks of the Steloit project.
 
 The source code in this repository is licensed under the Apache License,
 Version 2.0. **This trademark policy is separate from the code license.**
@@ -24,7 +24,7 @@ name or logo.
   or derivative product.
 - Use the Steloit name or logo in domain names, product names, company
   names, app-store listings, or marketing copy that implies endorsement.
-- Imply that Humane Technologies endorses your fork or derivative work.
+- Imply that Steloit endorses your fork or derivative work.
 - Use the Steloit name or logo for commercial purposes (paid services,
   paid support, SaaS distribution, etc.).
 
@@ -50,4 +50,4 @@ The following are explicitly prohibited:
 ## Contact
 
 For trademark licensing inquiries, write to
-<trademark@humanetechnologies.in>.
+<trademark@steloit.dev>.
