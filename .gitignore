@@ -1,0 +1,10 @@
+dist/
+*.tar.zst
+*.tar.zst.sigstore.json
+sha256sums.txt
+.DS_Store
+node_modules/
+*.swp
+*.swo
+.idea/
+.vscode/

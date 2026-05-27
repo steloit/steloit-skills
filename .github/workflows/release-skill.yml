@@ -1,0 +1,110 @@
+name: release-skill
+
+on:
+  push:
+    tags:
+      - 'skill-v*'
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Install PyYAML for frontmatter validator
+        run: python3 -m pip install --user pyyaml
+
+      - name: Pre-release lint
+        run: |
+          bash scripts/lint-public.sh
+          bash scripts/validate-frontmatter.sh
+
+      - name: Assert tag matches semver shape
+        run: |
+          if ! echo "${GITHUB_REF_NAME}" | grep -Eq '^skill-v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERR: tag ${GITHUB_REF_NAME} does not match ^skill-v[0-9]+\.[0-9]+\.[0-9]+$" >&2
+            exit 1
+          fi
+
+      - name: Build bundle
+        id: build
+        run: |
+          VERSION="${GITHUB_REF_NAME#skill-v}"
+          mkdir -p dist
+          TARBALL="dist/skill-bundle-v${VERSION}.tar.zst"
+          tar --zstd \
+              -cf "${TARBALL}" \
+              LICENSE \
+              NOTICE \
+              README.md \
+              TRADEMARK.md \
+              models.json \
+              skills
+          sha256sum "${TARBALL}" > dist/sha256sums.txt
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "tarball=${TARBALL}" >> "${GITHUB_OUTPUT}"
+
+      - name: Sign bundle via Cosign (Sigstore Fulcio keyless)
+        run: |
+          cosign sign-blob --yes \
+            --bundle="${{ steps.build.outputs.tarball }}.sigstore.json" \
+            "${{ steps.build.outputs.tarball }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/skill-bundle-v*.tar.zst
+            dist/skill-bundle-v*.tar.zst.sigstore.json
+            dist/sha256sums.txt
+          generate_release_notes: true
+          body: |
+            ## Skill Bundle ${{ github.ref_name }}
+
+            Install via Steloit CLI:
+            ```
+            steloit skills update
+            ```
+
+            Pin this exact version:
+            ```
+            steloit skills install --version ${{ github.ref_name }}
+            ```
+
+            Verify offline:
+            ```
+            steloit skills verify
+            ```
+
+      - name: Publish to server bundle-manifest API (best-effort)
+        if: env.BUNDLE_PUBLISH_TOKEN != ''
+        env:
+          BUNDLE_PUBLISH_TOKEN: ${{ secrets.BUNDLE_PUBLISH_TOKEN }}
+        continue-on-error: true
+        run: |
+          SHA="$(awk '{print $1}' dist/sha256sums.txt)"
+          TAG="${GITHUB_REF_NAME}"
+          curl -fSs -X POST "https://api.steloit.com/internal/bundle-publish" \
+            -H "Authorization: Bearer ${BUNDLE_PUBLISH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "{
+              \"version\": \"${{ steps.build.outputs.version }}\",
+              \"tag\": \"${TAG}\",
+              \"tarball_url\": \"https://github.com/${{ github.repository }}/releases/download/${TAG}/skill-bundle-v${{ steps.build.outputs.version }}.tar.zst\",
+              \"sigstore_bundle_url\": \"https://github.com/${{ github.repository }}/releases/download/${TAG}/skill-bundle-v${{ steps.build.outputs.version }}.tar.zst.sigstore.json\",
+              \"tarball_sha256\": \"${SHA}\",
+              \"released_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }"

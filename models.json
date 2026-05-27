@@ -1,0 +1,43 @@
+{
+  "default_provider": "claude",
+  "providers": {
+    "claude": {
+      "planner": "opus",
+      "critic": "sonnet",
+      "builder": "opus",
+      "shield": "sonnet",
+      "inspector": "sonnet",
+      "ranger": "haiku",
+      "refiner": "opus",
+      "explorer": "opus",
+      "sage": "sonnet",
+      "reviewer": "opus"
+    },
+    "codex": {
+      "planner": "gpt-5.4",
+      "critic": "gpt-5.3-codex",
+      "builder": "gpt-5.4",
+      "shield": "gpt-5.3-codex",
+      "inspector": "gpt-5.3-codex",
+      "ranger": "gpt-5.2",
+      "refiner": "gpt-5.4",
+      "explorer": "gpt-5.4",
+      "sage": "gpt-5.3-codex",
+      "reviewer": "gpt-5.4"
+    }
+  },
+  "reasoning_effort": {
+    "codex": {
+      "planner": "high",
+      "critic": "medium",
+      "builder": "high",
+      "shield": "medium",
+      "inspector": "medium",
+      "ranger": "medium",
+      "refiner": "medium",
+      "explorer": "high",
+      "sage": "medium",
+      "reviewer": "high"
+    }
+  }
+}

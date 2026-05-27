@@ -1,0 +1,33 @@
+name: lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Install PyYAML
+        run: python3 -m pip install --user pyyaml
+
+      - name: lint-public.sh
+        run: bash scripts/lint-public.sh
+
+      - name: validate-frontmatter.sh
+        run: bash scripts/validate-frontmatter.sh
+
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            **/*.md
+            !LICENSE
+        continue-on-error: true
